@@ -1,220 +1,96 @@
 # Role-Based Identity & Audit Log Middleware Engine
 
-[![CI](https://github.com/organization/role-audit-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/organization/role-audit-engine/actions/workflows/ci.yml)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20.x-green.svg)](https://nodejs.org/)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)
+![License](https://img.shields.io/badge/License-Apache--2.0-blue)
 
-An open-source, production-oriented security and compliance middleware engine for multi-tenant applications. It combines **granular RBAC/ABAC authorization**, **SHA-256 tamper-evident linked audit records**, and **privacy-aware data masking**.
+A modular TypeScript security engine for multi-tenant Express services. It combines identity integration, RBAC and ABAC policy evaluation, privacy-aware audit payload handling, and SHA-256 hash-chained audit records with PostgreSQL persistence and verification tools.
 
-Designed to strengthen security evidence for programs such as **SOC 2**, **ISO 27001**, and **HIPAA**.
+> This repository is a security engineering project and reference implementation. It does not provide a complete identity provider or certify an application against SOC 2, ISO 27001, HIPAA, or other standards.
 
----
+## What it demonstrates
 
-## Key Features
+- **Identity integration:** Express middleware accepts trusted principal and tenant resolvers supplied by the host application. Without a resolver, identity fails closed to an anonymous principal with no roles.
+- **RBAC and ABAC:** role inheritance, explicit deny rules, attribute conditions, hybrid authorization, and tenant isolation.
+- **Tamper-evident audit trails:** deterministic canonical JSON and SHA-256 predecessor links, plus verification for modified, missing, inserted, or reordered records.
+- **Privacy-aware logging:** recursive masking and pseudonymization of sensitive audit payload fields.
+- **Storage adapters:** in-memory storage for development and PostgreSQL storage with parameterized SQL and per-tenant advisory locks.
+- **Operational tooling:** verifier and tamper-scenario CLI commands, a reference Express app, Docker Compose configuration, and CI workflow.
 
-- **Granular RBAC**: Enterprise roles (`admin`, `auditor`, `manager`, `analyst`, `viewer`), role inheritance with cycle detection, explicit deny semantics, and tenant-scoped role bindings.
-- **Context-Aware ABAC**: Evaluates subject, resource, action, environment, and tenant attributes with comprehensive operators (`equals`, `in`, `greaterThan`, `matches`, `timeWindow`, `cidrMatches`).
-- **Tamper-Evident SHA-256 Audit Chains**: Every audit record is cryptographically chained to its predecessor using deterministic RFC-8785 canonical JSON.
-- **Automated Tamper Verification**: CLI and programmatic verifiers detect modifications, deletions, rogue insertions, and reorderings, pinpointing the exact broken link.
-- **Privacy-Aware Data Masking**: Automatically redacts passwords, session tokens, authorization headers, and cookies, masks credit cards/SSNs, and supports deterministic HMAC pseudonymization.
-- **Strict Multi-Tenant Isolation**: Enforces tenant boundaries by default, preventing cross-tenant privilege escalation.
-- **High Performance**: Sub-millisecond latency (< 0.3ms avg) tested at 100, 500, and 1,000 events/second.
+## Architecture
 
----
-
-## Desktop Application (.EXE)
-
-The engine can be executed as a standalone native Windows desktop application with a minimal, dark-mode dashboard:
-
-- **Desktop File**: `C:\Users\arnav pandey\OneDrive\Desktop\role-audit-engine.exe`
-- **Workspace File**: [`role-audit-engine.exe`](file:///c:/Users/arnav%20pandey/OneDrive/Desktop/Role-Based%20Identity%20&%20Audit%20Log%20Middleware%20Engine/role-audit-engine.exe)
-- **Rebuild Anytime**: `npm run build:exe`
-
-Simply double-click `role-audit-engine.exe` on your desktop to automatically launch the minimal UI:
-1. **Policy Sandbox**: Test RBAC and ABAC evaluations with real-time decision traces.
-2. **Audit Stream**: Inspect live SHA-256 chained audit logs and previous/event hashes.
-3. **Tamper Lab**: Trigger payload modifications, record deletions, rogue injections, or reorderings, then run the verifier to see 100% detection in real time.
-4. **Data Masker**: Interactive PII, secrets scrubber, and HMAC pseudonymizer.
-5. **Benchmark**: Live throughput and latency test runner.
-
----
-
-```
-role-audit-engine/
-├── packages/
-│   ├── core/              # Shared types, canonical JSON, crypto hash, errors, metrics
-│   ├── masking/           # Privacy-aware PII, secrets scrubber, pseudonymization
-│   ├── rbac/              # Role-Based Access Control engine with inheritance & explicit deny
-│   ├── abac/              # Attribute-Based Access Control engine & hybrid evaluator
-│   ├── audit/             # SHA-256 tamper-evident chain engine, verifier, Express middleware
-│   └── postgres/          # PostgreSQL storage adapter with advisory transaction locks
-├── cli/                   # CLI verifier, inspection tool, attack suite, and benchmark runner
-├── examples/
-│   └── express-reference-app/  # Complete multi-tenant reference Express application
-├── migrations/            # Production PostgreSQL SQL migrations (001, 002, 003)
-├── tests/                 # Comprehensive unit, concurrency, security, and E2E tests
-├── docs/                  # Architecture, verification guide, policy specs, threat model
-├── docker-compose.yml     # PostgreSQL 16 + Reference app container deployment
-├── SECURITY.md            # Trust model, boundaries, and vulnerability disclosure policy
-└── README.md
+```text
+Express request
+  -> trusted identity and tenant resolver
+  -> RBAC + ABAC decision (fail closed)
+  -> application handler
+  -> masked audit event
+  -> canonical serialization + SHA-256 chain
+  -> memory or PostgreSQL store
+  -> chain verifier / CLI
 ```
 
----
+Code is split into focused workspaces under `packages/`: `core`, `rbac`, `abac`, `masking`, `audit`, and `postgres`. See [architecture](docs/architecture.md), [policy specification](docs/policy-specification.md), and [threat model](docs/threat-model.md).
 
-## Quick Start (Under 10 Minutes)
+## Quick start
 
-### 1. Installation
+Requirements: Node.js 20 or later and npm. PostgreSQL is optional for the in-memory example.
 
 ```bash
-npm install
-```
-
-### 2. Basic Express Integration
-
-```typescript
-import express from 'express';
-import {
-  identityMiddleware,
-  authorize,
-  auditMiddleware,
-  AuditChainEngine,
-  MemoryAuditStore
-} from '@role-audit/audit';
-import { AuthorizationEngine, AbacEngine } from '@role-audit/abac';
-import { RbacEngine } from '@role-audit/rbac';
-
-const app = express();
-app.use(express.json());
-
-// Initialize engines
-const store = new MemoryAuditStore(); // Or PostgresAuditStore
-const auditEngine = new AuditChainEngine({ store, strictMode: true });
-const rbac = new RbacEngine();
-const abac = new AbacEngine();
-
-const authzEngine = new AuthorizationEngine({
-  rbac,
-  abac,
-  strategy: 'RBAC_AND_ABAC'
-});
-
-// 1. Identity Middleware: resolves caller principal & tenant
-app.use(identityMiddleware({
-  resolvePrincipal: (req) => ({
-    id: req.headers['x-user-id'] as string || 'anonymous',
-    type: 'human',
-    roles: (req.headers['x-user-roles'] as string)?.split(',') || ['viewer']
-  }),
-  resolveTenant: (req) => ({
-    tenantId: (req.headers['x-tenant-id'] as string) || 'default-tenant'
-  })
-}));
-
-// 2. Audit Interceptor: captures outcomes and masks sensitive fields
-app.use(auditMiddleware({ auditEngine, includeRequestBody: true }));
-
-// 3. Protected Route
-app.get(
-  '/api/invoices',
-  authorize({ action: 'invoice:read', resource: 'invoice', authzEngine, auditEngine }),
-  (req, res) => {
-    res.json({ invoices: [{ id: 'inv-1', amount: 250.0 }] });
-  }
-);
-
-app.listen(3000, () => console.log('Server running on port 3000'));
-```
-
----
-
-## Tamper-Evidence & Verification
-
-Each audit record is linked via:
-$$\text{event\_hash} = \text{SHA256}(\text{canonical\_json}(\text{event\_without\_hashes}) \parallel \text{"\|"} \parallel \text{previous\_hash})$$
-
-### Verify Tenant Chain with CLI
-```bash
-npm run cli -- verify --tenant tenant-alpha
-```
-
-### Run Automated Tampering Attack Suite
-Simulates modification, deletion, rogue insertion, and reordering attacks to verify that 100% of tampering attempts are caught:
-```bash
+npm ci
+npm run build
+npm test
 npm run tamper-test
 ```
 
-Output:
-```
-=============================================================
- ROLE-AUDIT TAMPER-EVIDENT VERIFICATION ATTACK SUITE
- Testing: Modification, Deletion, Insertion, Reordering
-=============================================================
+Run the reference app with in-memory audit storage:
 
-Scenario 0: Untampered baseline chain verification... PASSED (100% Valid Chain Verified)
-Scenario 1: Modification Attack (tampering payload)... DETECTED! Broken link flagged at index 2 (Reason: EVENT_HASH_MISMATCH)
-Scenario 2: Deletion Attack (deleting event #3)... DETECTED! Missing predecessor link flagged at index 2
-Scenario 3: Insertion Attack (injecting unauthorized event)... DETECTED! Injection broke linkage at index 2
-Scenario 4: Reordering Attack (swapping events)... DETECTED! Reordering broke linkage at index 1 (Reason: PREVIOUS_HASH_MISMATCH)
-
-=============================================================
->>> ALL TAMPERING ATTACK FIXTURES SUCCESSFULLY DETECTED <<<
-=============================================================
-```
-
----
-
-## Performance Benchmarks (PRD Section 18)
-
-Run the benchmark suite:
 ```bash
-npm run benchmark
+npm run start:example
 ```
 
-Results across representative workloads:
+The sample app uses a fixed anonymous identity by default. Its header-based demo identities can be enabled for local experimentation:
 
-| Workload | Throughput | Avg Latency | p95 Latency | Status |
-|---|---|---|---|---|
-| **100 events/sec** | 100 eps | **0.256 ms** | **0.481 ms** | **PASSED** |
-| **500 events/sec** | 499 eps | **0.085 ms** | **0.279 ms** | **PASSED** |
-| **1,000 events/sec** | 995 eps | **0.057 ms** | **0.215 ms** | **PASSED** |
-
----
-
-## Local Deployment with PostgreSQL & Docker Compose
-
-Deploy the reference application connected to PostgreSQL 16:
 ```bash
+ALLOW_INSECURE_DEMO_IDENTITY=true npm run start:example
+```
+
+**Never enable this demo option in a deployed environment.** The `x-user-*` and `x-tenant-*` headers are caller-controlled and are not authentication credentials. In a real service, configure `identityMiddleware` with resolvers backed by a verified session, JWT issuer, API gateway, or identity provider.
+
+## PostgreSQL
+
+Set `DATABASE_URL` to a PostgreSQL connection string; the reference server applies its schema migrations at startup.
+
+```bash
+# Example only: use your own local credentials and database
+$env:DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/role_audit_db'
 docker compose up -d
+npm run start:example
 ```
 
-Test endpoints:
-- **Healthcheck & Observability**: `http://localhost:3000/health`
-- **Protected Invoices**: `http://localhost:3000/api/invoices`
-- **Audit Log Inspection**: `http://localhost:3000/api/audit/events`
-- **Cryptographic Verification**: `http://localhost:3000/api/audit/verify`
+The PostgreSQL adapter uses bound parameters and transactions. Hash chaining makes unauthorized changes detectable when a trusted chain head or external checkpoint is available; a database administrator who can rewrite the entire chain can recompute hashes. Export signed checkpoints to independently controlled storage for stronger assurance. See [SECURITY.md](SECURITY.md).
 
----
+## Verification and security checks
 
-## Testing
-
-Run all unit, security, and integration tests:
 ```bash
-npm test
+npm test                 # Unit, integration, and concurrency suites
+npm run tamper-test      # Modification, deletion, insertion, and reordering scenarios
+npm run benchmark        # Local performance measurement
 ```
 
----
+The test suite includes RBAC/ABAC decisions, tenant boundaries, masking, hash verification, concurrent writers, and Express integration. Benchmark figures vary by machine; use the included runner and [benchmark notes](docs/benchmark-report.md) to reproduce measurements in your environment.
 
-## Security Model & Limitations (PRD Section 17 & 26)
+## Project layout
 
-- **Tamper-Evidence vs Immutability**: Hash chaining provides mathematical tamper-evidence, not absolute physical immutability if an attacker controls the complete database storage boundary.
-- **External Anchoring**: Use `CheckpointManager` to anchor periodic signed checkpoint summaries to external WORM storage (e.g. AWS S3 Object Lock, GCP Bucket Lock).
-- **Compliance Scope**: The engine provides tamper-evident audit evidence for SOC 2, ISO 27001, and HIPAA compliance programs, but does not itself certify compliance.
-
-See [SECURITY.md](file:///c:/Users/arnav%20pandey/OneDrive/Desktop/Role-Based%20Identity%20&%20Audit%20Log%20Middleware%20Engine/SECURITY.md) for full trust model and vulnerability reporting.
-
----
+```text
+packages/                 Core, policy, middleware, masking, and storage workspaces
+examples/                 Express reference application
+cli/                      Verification, tamper, and benchmark commands
+migrations/               PostgreSQL schema migrations
+tests/                    Unit, integration, concurrency, and security scenarios
+docs/                     Architecture, threat model, policy, and verification guides
+```
 
 ## License
 
-Licensed under the [Apache License, Version 2.0](file:///c:/Users/arnav%20pandey/OneDrive/Desktop/Role-Based%20Identity%20&%20Audit%20Log%20Middleware%20Engine/LICENSE).
+Apache-2.0. See [LICENSE](LICENSE).

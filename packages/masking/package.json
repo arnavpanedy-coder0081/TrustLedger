@@ -1,0 +1,16 @@
+{
+  "name": "@role-audit/masking",
+  "version": "1.0.0",
+  "description": "Privacy-aware PII and secrets masking engine for audit log payloads",
+  "main": "../../../dist/packages/masking/src/index.js",
+  "types": "../../../dist/packages/masking/src/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@role-audit/core": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

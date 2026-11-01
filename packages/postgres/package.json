@@ -1,0 +1,19 @@
+{
+  "name": "@role-audit/postgres",
+  "version": "1.0.0",
+  "description": "PostgreSQL storage adapter for tamper-evident audit chains, policies, and verification runs",
+  "main": "../../../dist/packages/postgres/src/index.js",
+  "types": "../../../dist/packages/postgres/src/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@role-audit/core": "*",
+    "@role-audit/audit": "*",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.10",
+    "typescript": "^5.7.2"
+  }
+}

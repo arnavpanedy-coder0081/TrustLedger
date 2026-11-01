@@ -1,0 +1,17 @@
+{
+  "name": "@role-audit/audit",
+  "version": "1.0.0",
+  "description": "Tamper-evident SHA-256 chained audit logging engine with privacy masking, batching, and integrity verifier",
+  "main": "../../../dist/packages/audit/src/index.js",
+  "types": "../../../dist/packages/audit/src/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@role-audit/core": "*",
+    "@role-audit/masking": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

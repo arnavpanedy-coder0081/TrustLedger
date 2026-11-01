@@ -1,0 +1,16 @@
+{
+  "name": "@role-audit/rbac",
+  "version": "1.0.0",
+  "description": "Granular Role-Based Access Control engine with inheritance, explicit deny, and tenant scoping",
+  "main": "../../../dist/packages/rbac/src/index.js",
+  "types": "../../../dist/packages/rbac/src/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@role-audit/core": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

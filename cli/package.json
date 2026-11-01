@@ -1,0 +1,24 @@
+{
+  "name": "@role-audit/cli",
+  "version": "1.0.0",
+  "description": "Command-line interface for audit chain verification, inspection, tampering testing, and benchmarking",
+  "bin": {
+    "role-audit": "./dist/index.js"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@role-audit/core": "*",
+    "@role-audit/audit": "*",
+    "@role-audit/rbac": "*",
+    "@role-audit/abac": "*",
+    "@role-audit/masking": "*",
+    "@role-audit/postgres": "*",
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

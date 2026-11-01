@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@role-audit/core": ["./packages/core/src/index.ts"],
+      "@role-audit/masking": ["./packages/masking/src/index.ts"],
+      "@role-audit/rbac": ["./packages/rbac/src/index.ts"],
+      "@role-audit/abac": ["./packages/abac/src/index.ts"],
+      "@role-audit/audit": ["./packages/audit/src/index.ts"],
+      "@role-audit/postgres": ["./packages/postgres/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"]
+}

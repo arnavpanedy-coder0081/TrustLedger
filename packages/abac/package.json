@@ -1,0 +1,17 @@
+{
+  "name": "@role-audit/abac",
+  "version": "1.0.0",
+  "description": "Attribute-Based Access Control engine with conditions, path evaluation, policy priority, and explicit deny",
+  "main": "../../../dist/packages/abac/src/index.js",
+  "types": "../../../dist/packages/abac/src/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@role-audit/core": "*",
+    "@role-audit/rbac": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

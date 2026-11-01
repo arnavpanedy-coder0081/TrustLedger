@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrustLender — Identity & Audit Control Center</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #111827;
+      --card-border: #1f293d;
+      --hover-border: #374151;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.12);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.12);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.12);
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --surface: #101a2a;
+      --accent-soft: rgba(61, 214, 174, .12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: radial-gradient(ellipse at 12% -10%, rgba(37, 99, 235, .18), transparent 38%), var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Minimal Header */
+    header {
+      border-bottom: 1px solid rgba(148, 163, 184, .12);
+      background: rgba(9, 13, 22, 0.86);
+      backdrop-filter: blur(12px);
+      padding: 16px clamp(18px, 4vw, 56px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #55e0bb, #2787d8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .brand-title {
+      font-weight: 720;
+      font-size: 16px;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-badge {
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 12px;
+      background: var(--accent-soft);
+      color: #71dfbf;
+      font-family: var(--font-mono);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--success-bg);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .status-pill.tampered {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* Minimal Navigation Tabs */
+    nav {
+      display: flex;
+      gap: 8px;
+      padding: 12px clamp(18px, 4vw, 56px);
+      background: rgba(14, 21, 34, .9);
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .nav-btn {
+      padding: 6px 14px;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .nav-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .nav-btn.active {
+      background: rgba(61, 214, 174, .1);
+      color: var(--text-main);
+      border-color: rgba(61, 214, 174, .28);
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      padding: 34px clamp(18px, 4vw, 56px) 48px;
+      max-width: 1500px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .view-section {
+      display: none;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    /* Grid & Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .card {
+      background: linear-gradient(155deg, rgba(18, 29, 46, .97), rgba(14, 21, 34, .97));
+      border: 1px solid rgba(148, 163, 184, .14);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 18px;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, .14);
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-desc {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+
+    /* Inputs & Form Elements */
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      background: #0d131f;
+      border: 1px solid var(--card-border);
+      border-radius: 9px;
+      padding: 8px 12px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      transition: border 0.15s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+
+    textarea {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: var(--card-border);
+      color: var(--text-main);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-secondary:hover {
+      background: #2a374f;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    /* Decision Result Badge */
+    .decision-banner {
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .decision-banner.allow {
+      background: var(--success-bg);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .decision-banner.deny {
+      background: var(--danger-bg);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .decision-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .decision-tag {
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.03em;
+    }
+
+    .decision-tag.allow { color: var(--success); }
+    .decision-tag.deny { color: var(--danger); }
+
+    .trace-box {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 10px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      color: #d1d5db;
+    }
+
+    /* Event Chain Table / List */
+    .event-card {
+      background: #0d131f;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+      transition: border 0.15s;
+    }
+
+    .event-card:hover {
+      border-color: var(--hover-border);
+    }
+
+    .event-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .hash-chain-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      background: rgba(0, 0, 0, 0.2);
+      padding: 8px 10px;
+      border-radius: 6px;
+      margin-top: 8px;
+    }
+
+    .hash-val {
+      color: #60a5fa;
+      word-break: break-all;
+    }
+
+    .tag {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+
+    .tag-allow { background: var(--success-bg); color: var(--success); }
+    .tag-deny { background: var(--danger-bg); color: var(--danger); }
+
+    /* Verification Report */
+    .verify-box {
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .verify-box.intact {
+      background: var(--success-bg);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .verify-box.tampered {
+      background: var(--danger-bg);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .verify-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .verify-title.intact { color: var(--success); }
+    .verify-title.tampered { color: var(--danger); }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--card-border);
+      padding: 12px 24px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-dim);
+      background: var(--card-bg);
+    }
+
+    .welcome { margin: 4px 0 24px; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+    .eyebrow { color: #71dfbf; font: 700 11px var(--font-mono); letter-spacing: .16em; text-transform: uppercase; margin-bottom: 9px; }
+    .welcome h1 { font-size: clamp(27px, 4vw, 38px); line-height: 1.15; letter-spacing: -.045em; font-weight: 720; }
+    .welcome p { color: var(--text-muted); margin-top: 10px; max-width: 640px; font-size: 14px; }
+    .welcome-mark { font: 12px var(--font-mono); color: #a5b4c8; border: 1px solid var(--card-border); padding: 10px 14px; border-radius: 10px; white-space: nowrap; }
+    .welcome-mark span { color: #71dfbf; }
+    .nav-btn { padding: 9px 15px; }
+    @media (max-width: 720px) {
+      header { align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+      header > div:last-child { width: 100%; justify-content: space-between !important; }
+      .brand-badge { display: none; }
+      nav { overflow-x: auto; }
+      .nav-btn { white-space: nowrap; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .welcome { align-items: flex-start; flex-direction: column; }
+      .card { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Minimal Bar -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">T</div>
+      <div>
+        <div class="brand-title">TrustLender</div>
+        <div style="font-size:11px;color:var(--text-dim);">IDENTITY &amp; AUDIT CONTROL CENTER</div>
+      </div>
+      <span class="brand-badge">SECURITY OPERATIONS</span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div id="chainStatusBadge" class="status-pill">
+        <span class="status-dot"></span>
+        <span id="chainStatusText">Chain Integrity: Intact</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="runVerifyChain()">Verify Now</button>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav>
+    <button class="nav-btn active" onclick="switchTab('accessTab', this)">Policy Sandbox</button>
+    <button class="nav-btn" onclick="switchTab('auditTab', this)">Audit Stream</button>
+    <button class="nav-btn" onclick="switchTab('tamperTab', this)">Tamper Lab</button>
+    <button class="nav-btn" onclick="switchTab('maskingTab', this)">Data Masker</button>
+    <button class="nav-btn" onclick="switchTab('benchmarkTab', this)">Benchmark</button>
+  </nav>
+
+  <!-- Main Views -->
+  <main>
+
+    <div class="welcome">
+      <div>
+        <div class="eyebrow">TRUSTLENDER / CONTROL PLANE</div>
+        <h1>Trust, with a verifiable trail.</h1>
+        <p>Manage access decisions, inspect tamper-evident activity, and protect sensitive data from one security workspace.</p>
+      </div>
+      <div class="welcome-mark"><span>●</span> LOCAL SECURITY ENGINE &nbsp;·&nbsp; SHA-256</div>
+    </div>
+
+    <!-- Tab 1: Policy Sandbox (Evaluate RBAC / ABAC) -->
+    <section id="accessTab" class="view-section active">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Access Request Parameters</div>
+          <div class="card-desc">Simulate an incoming multi-tenant API request against granular RBAC & ABAC policies.</div>
+
+          <div class="form-group">
+            <label>Tenant ID</label>
+            <input type="text" id="reqTenant" value="tenant-alpha">
+          </div>
+
+          <div class="form-group">
+            <label>Principal (User ID)</label>
+            <input type="text" id="reqUser" value="alice-mgr">
+          </div>
+
+          <div class="form-group">
+            <label>Assigned Roles</label>
+            <select id="reqRoles">
+              <option value="manager">manager (Reads, Creates, Updates, Exports)</option>
+              <option value="analyst">analyst (Reads, Exports, Analyzes)</option>
+              <option value="viewer">viewer (Read-Only across resources)</option>
+              <option value="admin">admin (Full Administrative Access)</option>
+              <option value="auditor">auditor (Audit Logs & Verification Tooling)</option>
+              <option value="unassigned">unassigned (No roles - Denied by default)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Department (ABAC Subject Attribute)</label>
+            <input type="text" id="reqDept" value="oncology">
+          </div>
+
+          <div class="form-group">
+            <label>Target Resource & Action</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <select id="reqResourceType">
+                <option value="invoice">invoice</option>
+                <option value="patient">patient</option>
+                <option value="data">data</option>
+                <option value="audit">audit</option>
+              </select>
+              <select id="reqAction">
+                <option value="invoice:read">invoice:read</option>
+                <option value="invoice:create">invoice:create</option>
+                <option value="patient:read">patient:read</option>
+                <option value="data:export">data:export</option>
+                <option value="audit:verify">audit:verify</option>
+                <option value="system:destroy">system:destroy (Unauthorized)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Resource Department (for ABAC Matching)</label>
+            <input type="text" id="reqResourceDept" value="oncology">
+          </div>
+
+          <button class="btn btn-primary" style="width: 100%;" onclick="evaluateAccess()">Evaluate Decision & Log Audit</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Authorization Decision & Trace</div>
+          <div class="card-desc">Deterministic evaluation combining tenant boundaries, role hierarchies, and ABAC conditions.</div>
+
+          <div id="decisionOutput" style="display: none;">
+            <div id="decisionBanner" class="decision-banner allow">
+              <div class="decision-header">
+                <span id="decisionLabel" class="decision-tag allow">ALLOW</span>
+                <span id="decisionTimestamp" style="font-size: 11px; color: var(--text-dim);"></span>
+              </div>
+              <div id="decisionReason" style="font-size: 13px; font-weight: 500;"></div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <label>Decision Trace & Matched Conditions</label>
+              <div id="decisionTrace" class="trace-box"></div>
+            </div>
+          </div>
+
+          <div id="decisionPlaceholder" style="padding: 40px; text-align: center; color: var(--text-dim);">
+            Click "Evaluate Decision" to test authorization policy evaluation.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Audit Stream -->
+    <section id="auditTab" class="view-section">
+      <div class="card">
+        <div class="card-title">
+          <span>SHA-256 Chained Audit Event Stream</span>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary btn-sm" onclick="loadAuditEvents()">Refresh Stream</button>
+          </div>
+        </div>
+        <div class="card-desc">Every event is canonicalized (RFC-8785) and hashed with the previous record's hash.</div>
+
+        <div id="eventsList">
+          <div style="text-align: center; color: var(--text-dim); padding: 20px;">Loading events...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 3: Tamper Lab -->
+    <section id="tamperTab" class="view-section">
+      <div class="card">
+        <div class="card-title">Cryptographic Integrity Verifier & Tamper Simulator</div>
+        <div class="card-desc">Test real-time mathematical tamper detection against modification, deletion, injection, and reordering.</div>
+
+        <div id="verifyReportBox" class="verify-box intact">
+          <div id="verifyReportTitle" class="verify-title intact">✓ 100% Chain Integrity Verified</div>
+          <div id="verifyReportDesc" style="color: var(--text-muted); font-size: 13px;">All SHA-256 hash links and canonical event hashes mathematically validate.</div>
+          <div id="verifyMetaDetails" style="font-family: var(--font-mono); font-size: 12px; margin-top: 10px; color: var(--text-dim);"></div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 24px;">
+          <button class="btn btn-primary" onclick="runVerifyChain()">Run Full Verification Check</button>
+          <button class="btn btn-secondary" onclick="resetChain()">Reset / Restore Clean Chain</button>
+        </div>
+
+        <div style="border-top: 1px solid var(--card-border); padding-top: 16px;">
+          <div class="card-title" style="margin-bottom: 10px;">Simulate Tampering Attacks (PRD Section 17)</div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+            <button class="btn btn-danger" onclick="triggerTamper('modify')">1. Tamper Event Payload</button>
+            <button class="btn btn-danger" onclick="triggerTamper('delete')">2. Delete Event Record</button>
+            <button class="btn btn-danger" onclick="triggerTamper('insert')">3. Inject Rogue Event</button>
+            <button class="btn btn-danger" onclick="triggerTamper('reorder')">4. Reorder Events</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 4: Data Masking Sandbox -->
+    <section id="maskingTab" class="view-section">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Sensitive Input Payload</div>
+          <div class="card-desc">Enter text containing credit cards, passwords, API keys, tokens, emails, SSNs.</div>
+
+          <div class="form-group">
+            <label>Payload JSON or Text</label>
+            <textarea id="rawPayloadInput" style="min-height: 220px;">{
+  "customerName": "Jane Doe",
+  "customerEmail": "jane.doe@enterprise.org",
+  "creditCard": "4111 2222 3333 4444",
+  "cvv": "789",
+  "userPassword": "SuperSecretPassword123!",
+  "apiKey": "sk-live-9872347128934",
+  "notes": "Patient SSN is 123-45-6789. Contacted via phone."
+}</textarea>
+          </div>
+
+          <button class="btn btn-primary" style="width: 100%;" onclick="runMasking()">Scrub Sensitive Data</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Sanitized Audit Payload</div>
+          <div class="card-desc">Redacted secrets, masked PANs, and HMAC deterministic pseudonymization.</div>
+
+          <div class="form-group">
+            <label>Masked Audit Representation</label>
+            <textarea id="maskedPayloadOutput" readonly style="min-height: 220px; background: #070b12; color: #34d399;"></textarea>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Benchmark -->
+    <section id="benchmarkTab" class="view-section">
+      <div class="card">
+        <div class="card-title">Performance Benchmark Suite (PRD Section 18)</div>
+        <div class="card-desc">Measures synchronous hashing, canonicalization, masking, and storage at target workloads.</div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+          <button class="btn btn-primary" onclick="runBenchmark(100)">Benchmark 100 eps</button>
+          <button class="btn btn-primary" onclick="runBenchmark(500)">Benchmark 500 eps</button>
+          <button class="btn btn-primary" onclick="runBenchmark(1000)">Benchmark 1,000 eps</button>
+        </div>
+
+        <div id="benchmarkLoading" style="display: none; padding: 20px; color: var(--accent); font-weight: 500;">
+          Running high-throughput benchmark...
+        </div>
+
+        <div id="benchmarkResultsBox"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    TrustLender &bull; Identity, authorization &amp; audit controls &bull; SHA-256 tamper-evident event chains
+  </footer>
+
+  <script>
+    function switchTab(tabId, el) {
+      document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      el.classList.add('active');
+
+      if (tabId === 'auditTab') {
+        loadAuditEvents();
+      }
+    }
+
+    async function evaluateAccess() {
+      const payload = {
+        tenantId: document.getElementById('reqTenant').value,
+        userId: document.getElementById('reqUser').value,
+        roles: [document.getElementById('reqRoles').value],
+        userDepartment: document.getElementById('reqDept').value,
+        resourceType: document.getElementById('reqResourceType').value,
+        action: document.getElementById('reqAction').value,
+        resourceDepartment: document.getElementById('reqResourceDept').value
+      };
+
+      try {
+        const res = await fetch('/api/evaluate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        document.getElementById('decisionPlaceholder').style.display = 'none';
+        document.getElementById('decisionOutput').style.display = 'block';
+
+        const banner = document.getElementById('decisionBanner');
+        const label = document.getElementById('decisionLabel');
+        const isAllow = data.decision.effect === 'ALLOW';
+
+        banner.className = `decision-banner ${isAllow ? 'allow' : 'deny'}`;
+        label.className = `decision-tag ${isAllow ? 'allow' : 'deny'}`;
+        label.innerText = data.decision.effect;
+        document.getElementById('decisionTimestamp').innerText = new Date(data.decision.timestamp).toLocaleTimeString();
+        document.getElementById('decisionReason').innerText = data.decision.reason;
+        document.getElementById('decisionTrace').innerText = JSON.stringify({
+          matchedConditions: data.decision.matchedConditions || [],
+          policyId: data.decision.policyId,
+          policyVersion: data.decision.policyVersion,
+          traces: data.decision.traces
+        }, null, 2);
+
+        // Update chain status badge
+        runVerifyChain();
+      } catch (err) {
+        alert('Evaluation failed: ' + err.message);
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[char]);
+    }
+
+    async function loadAuditEvents() {
+      const container = document.getElementById('eventsList');
+      container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-dim);">Loading...</div>';
+
+      try {
+        const res = await fetch('/api/events');
+        const events = await res.json();
+
+        if (events.length === 0) {
+          container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-dim);">No audit events recorded yet.</div>';
+          return;
+        }
+
+        container.innerHTML = events.slice().reverse().map((e, idx) => `
+          <div class="event-card">
+            <div class="event-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="tag ${e.decision === 'ALLOW' ? 'tag-allow' : 'tag-deny'}">${escapeHtml(e.decision)}</span>
+                <strong style="font-size: 13px;">${escapeHtml(e.action)}</strong>
+                <span style="color: var(--text-dim); font-size: 12px;">(${escapeHtml(e.resource_type)}${e.resource_id ? ':' + escapeHtml(e.resource_id) : ''})</span>
+              </div>
+              <span style="color: var(--text-dim); font-size: 11px;">${escapeHtml(new Date(e.timestamp).toLocaleString())}</span>
+            </div>
+
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
+              <strong>Principal:</strong> ${escapeHtml(e.principal_id)} (${escapeHtml(e.principal_type)}) &bull; <strong>Tenant:</strong> ${escapeHtml(e.tenant_id)}
+            </div>
+
+            ${e.masked_payload ? `
+              <div style="font-size: 11px; color: #a7f3d0; background: rgba(0,0,0,0.3); padding: 6px 10px; border-radius: 4px; margin-bottom: 6px;">
+                <strong>Masked Payload:</strong> ${escapeHtml(JSON.stringify(e.masked_payload))}
+              </div>
+            ` : ''}
+
+            <div class="hash-chain-meta">
+              <div>PREV HASH: <span class="hash-val">${escapeHtml(e.previous_hash)}</span></div>
+              <div>EVENT HASH: <span class="hash-val">${escapeHtml(e.event_hash)}</span></div>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = '<div style="color: var(--danger); padding: 20px;">Failed to load events: ' + escapeHtml(err.message) + '</div>';
+      }
+    }
+
+    async function runVerifyChain() {
+      try {
+        const res = await fetch('/api/verify');
+        const result = await res.json();
+
+        const badge = document.getElementById('chainStatusBadge');
+        const badgeText = document.getElementById('chainStatusText');
+        const reportBox = document.getElementById('verifyReportBox');
+        const reportTitle = document.getElementById('verifyReportTitle');
+        const reportDesc = document.getElementById('verifyReportDesc');
+        const reportMeta = document.getElementById('verifyMetaDetails');
+
+        if (result.verified) {
+          badge.className = 'status-pill';
+          badgeText.innerText = 'Chain Integrity: Intact';
+
+          reportBox.className = 'verify-box intact';
+          reportTitle.className = 'verify-title intact';
+          reportTitle.innerText = '✓ 100% Chain Integrity Verified';
+          reportDesc.innerText = `Checked ${result.total_events} events. All cryptographic links valid in ${result.duration_ms.toFixed(2)} ms.`;
+          reportMeta.innerText = `Head Hash: ${result.head_hash || 'None'}\nGenesis: ${result.genesis_hash}`;
+        } else {
+          badge.className = 'status-pill tampered';
+          badgeText.innerText = 'ALERT: Tampered Chain';
+
+          reportBox.className = 'verify-box tampered';
+          reportTitle.className = 'verify-title tampered';
+          reportTitle.innerText = '⚠ Tampering Detected!';
+          const link = result.first_broken_link;
+          reportDesc.innerText = `Broken link at index ${link.index} (Audit ID: ${link.audit_id}). Reason: ${link.reason}`;
+          reportMeta.innerText = `Expected: ${link.expected_event_hash || link.expected_previous_hash}\nActual:   ${link.actual_event_hash || link.actual_previous_hash}`;
+        }
+      } catch (err) {
+        console.error('Verify failed:', err);
+      }
+    }
+
+    async function triggerTamper(attackType) {
+      try {
+        const res = await fetch('/api/tamper', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ attackType })
+        });
+        const data = await res.json();
+        alert(`Tampering injected: ${data.message}. Now running verification check...`);
+        runVerifyChain();
+        loadAuditEvents();
+      } catch (err) {
+        alert('Tamper failed: ' + err.message);
+      }
+    }
+
+    async function resetChain() {
+      try {
+        await fetch('/api/tamper', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ attackType: 'reset' })
+        });
+        alert('Audit store restored to initial clean valid state.');
+        runVerifyChain();
+        loadAuditEvents();
+      } catch (err) {
+        alert('Reset failed: ' + err.message);
+      }
+    }
+
+    async function runMasking() {
+      const raw = document.getElementById('rawPayloadInput').value;
+      try {
+        const parsed = JSON.parse(raw);
+        const res = await fetch('/api/mask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payload: parsed })
+        });
+        const data = await res.json();
+        document.getElementById('maskedPayloadOutput').value = JSON.stringify(data.masked, null, 2);
+      } catch (err) {
+        alert('Invalid JSON: ' + err.message);
+      }
+    }
+
+    async function runBenchmark(rate) {
+      const loading = document.getElementById('benchmarkLoading');
+      const box = document.getElementById('benchmarkResultsBox');
+      loading.style.display = 'block';
+
+      try {
+        const res = await fetch('/api/benchmark', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rate })
+        });
+        const data = await res.json();
+        loading.style.display = 'none';
+
+        box.innerHTML = `
+          <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 8px; border: 1px solid var(--card-border);">
+            <div style="font-weight: 600; margin-bottom: 10px;">Benchmark Results (${data.targetRate} eps)</div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; font-family: var(--font-mono); font-size: 13px;">
+              <div>Actual Throughput: <strong style="color: var(--success);">${data.actualRate} eps</strong></div>
+              <div>Avg Latency: <strong style="color: #60a5fa;">${data.avgLatencyMs} ms</strong></div>
+              <div>p95 Latency: <strong style="color: #a78bfa;">${data.p95LatencyMs} ms</strong></div>
+              <div>Events Tested: <strong>${data.totalEvents}</strong></div>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        loading.style.display = 'none';
+        alert('Benchmark failed: ' + err.message);
+      }
+    }
+
+    // Auto verify on initial load
+    window.onload = () => {
+      runVerifyChain();
+      runMasking();
+    };
+  </script>
+</body>
+</html>

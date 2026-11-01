@@ -1,0 +1,51 @@
+{
+  "name": "role-audit-engine",
+  "version": "1.0.0",
+  "description": "Role-Based Identity & Audit Log Middleware Engine with SHA-256 Tamper-Evident Chains and Privacy-Aware Masking",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "cli",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build:exe": "node scripts/build-exe.js",
+    "test": "node node_modules/vitest/vitest.mjs run",
+    "test:watch": "node node_modules/vitest/vitest.mjs",
+    "test:coverage": "node node_modules/vitest/vitest.mjs run --coverage",
+    "cli": "node dist/cli/src/index.js",
+    "tamper-test": "node dist/cli/src/tamper-test.js",
+    "benchmark": "node dist/cli/src/benchmark.js",
+    "start:example": "node dist/examples/express-reference-app/src/server.js"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.1",
+    "@types/pg": "^8.11.10",
+    "commander": "^13.1.0",
+    "dotenv": "^16.4.7",
+    "esbuild": "^0.28.2",
+    "express": "^4.21.2",
+    "pg": "^8.13.1",
+    "postject": "^1.0.0-alpha.6",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "keywords": [
+    "rbac",
+    "abac",
+    "audit-log",
+    "tamper-evident",
+    "sha256",
+    "middleware",
+    "express",
+    "security",
+    "compliance",
+    "multi-tenant",
+    "masking"
+  ],
+  "license": "Apache-2.0"
+}

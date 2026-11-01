@@ -1,0 +1,23 @@
+{
+  "name": "@role-audit/express-reference-app",
+  "version": "1.0.0",
+  "description": "Production reference Express app demonstrating multi-tenant RBAC/ABAC authorization and tamper-evident audit logging",
+  "main": "dist/server.js",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@role-audit/core": "*",
+    "@role-audit/masking": "*",
+    "@role-audit/rbac": "*",
+    "@role-audit/abac": "*",
+    "@role-audit/audit": "*",
+    "@role-audit/postgres": "*",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "typescript": "^5.7.2"
+  }
+}

@@ -78,7 +78,7 @@ Hash chaining provides tamper evidence, not absolute immutability. A database ad
 
 ## Verification coverage and limitations
 
-GitHub Actions runs the build, unit and integration tests, tamper scenarios, and benchmarks on Node.js 20 and 22. It provisions a PostgreSQL service, but the current PostgreSQL stale-writer regression test uses a mocked client; it checks locking and stale-head rejection logic without exercising a live database. Run live PostgreSQL tests before relying on database behavior in a deployment. Docker image build and startup also require a host with Docker available.
+GitHub Actions builds and runs unit and integration tests, tamper scenarios, and benchmarks on Node.js 20 and 22. It runs live PostgreSQL tests against its service: the tests verify a persisted hash chain, detect a changed database row, and exercise concurrent writers through independent database pools. A separate mocked-client test checks stale-head rejection. On Node.js 22, CI also builds the Docker image and starts the reference app against PostgreSQL. Locally, the live database tests run only when `DATABASE_URL` is set. The workflow does not run `npm run typecheck`; run that command locally as part of verification.
 
 The desktop UI is a demonstration, not a multi-user or remote-access service. Keep it local. Anyone who can modify its local files can rewrite the file snapshot. Hash chains without an independently retained checkpoint cannot prove the original data after a complete database rewrite. The Express example's optional header identity mode is insecure and must not be deployed.
 

@@ -10,6 +10,8 @@ jobs:
   test:
     name: Build, Test & Verify
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/role_audit_db
 
     strategy:
       matrix:
@@ -54,3 +56,31 @@ jobs:
 
       - name: Run performance benchmark suite
         run: npm run benchmark
+
+      - name: Build Docker image
+        if: matrix.node-version == '22.x'
+        run: docker build -t trustledger-ci .
+
+      - name: Start Docker image against CI PostgreSQL
+        if: matrix.node-version == '22.x'
+        run: |
+          docker run -d --network host --name trustledger-reference-app \
+            -e PORT=3000 \
+            -e DATABASE_URL="$DATABASE_URL" \
+            trustledger-ci
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3000/health; then
+              echo
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs trustledger-reference-app
+          exit 1
+
+      - name: Collect Docker logs and stop container
+        if: always() && matrix.node-version == '22.x'
+        run: |
+          docker logs trustledger-reference-app || true
+          docker stop trustledger-reference-app || true
+          docker rm trustledger-reference-app || true

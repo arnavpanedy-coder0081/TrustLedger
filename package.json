@@ -32,7 +32,8 @@
     "postject": "^1.0.0-alpha.6",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vite": "^6.4.5",
+    "vitest": "^4.1.12"
   },
   "keywords": [
     "rbac",

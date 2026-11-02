@@ -1,94 +1,97 @@
-# Role-Based Identity & Audit Log Middleware Engine
+# TrustLedger
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)
 ![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)
 ![License](https://img.shields.io/badge/License-Apache--2.0-blue)
 
-A modular TypeScript security engine for multi-tenant Express services. It combines identity integration, RBAC and ABAC policy evaluation, privacy-aware audit payload handling, and SHA-256 hash-chained audit records with PostgreSQL persistence and verification tools.
+TrustLedger is a TypeScript security reference project for multi-tenant Express services, with a small local desktop audit demo. It combines identity integration, role- and attribute-based authorization, privacy-aware audit payload handling, and SHA-256 hash-chained audit records. Storage options include in-memory, local file snapshots, and PostgreSQL.
 
-> This repository is a security engineering project and reference implementation. It does not provide a complete identity provider or certify an application against SOC 2, ISO 27001, HIPAA, or other standards.
+> TrustLedger is a reference implementation. It is not a complete identity provider, a production security certification, or a compliance guarantee. Integrating it does not by itself establish SOC 2, ISO 27001, HIPAA, or other compliance.
 
-## What it demonstrates
+## Features
 
-- **Identity integration:** Express middleware accepts trusted principal and tenant resolvers supplied by the host application. Without a resolver, identity fails closed to an anonymous principal with no roles.
+- **Identity integration:** Express middleware accepts principal and tenant resolvers from the host service. Missing identity configuration fails closed to an anonymous principal with no roles.
 - **RBAC and ABAC:** role inheritance, explicit deny rules, attribute conditions, hybrid authorization, and tenant isolation.
-- **Tamper-evident audit trails:** deterministic canonical JSON and SHA-256 predecessor links, plus verification for modified, missing, inserted, or reordered records.
+- **Tamper-evident audit trails:** deterministic canonical JSON and SHA-256 predecessor links, with verification for modified, missing, inserted, or reordered events.
 - **Privacy-aware logging:** recursive masking and pseudonymization of sensitive audit payload fields.
-- **Storage adapters:** in-memory storage for development and PostgreSQL storage with parameterized SQL and per-tenant advisory locks.
-- **Operational tooling:** verifier and tamper-scenario CLI commands, a reference Express app, Docker Compose configuration, and CI workflow.
+- **Storage adapters:** in-memory and PostgreSQL stores for the middleware, plus an atomic local file snapshot store for the desktop demo.
+- **Developer tools:** a reference Express app, audit verification and tamper commands, benchmarks, tests, and Docker Compose configuration.
 
-## Architecture
+## Requirements
 
-```text
-Express request
-  -> trusted identity and tenant resolver
-  -> RBAC + ABAC decision (fail closed)
-  -> application handler
-  -> masked audit event
-  -> canonical serialization + SHA-256 chain
-  -> memory or PostgreSQL store
-  -> chain verifier / CLI
-```
+- Node.js 20 or later
+- npm
+- Docker Compose only if you want to run the bundled PostgreSQL and reference-app services
 
-Code is split into focused workspaces under `packages/`: `core`, `rbac`, `abac`, `masking`, `audit`, and `postgres`. See [architecture](docs/architecture.md), [policy specification](docs/policy-specification.md), and [threat model](docs/threat-model.md).
-
-## Quick start
-
-Requirements: Node.js 20 or later and npm. PostgreSQL is optional for the in-memory example.
+## Install and verify
 
 ```bash
+git clone https://github.com/arnavpanedy-coder0081/TrustLedger.git
+cd TrustLedger
 npm ci
+npm run typecheck
 npm run build
 npm test
 npm run tamper-test
 ```
 
-Run the reference app with in-memory audit storage:
+Run the local benchmark with `npm run benchmark`. It measures the in-memory store; results depend on the machine and are not PostgreSQL performance claims.
+
+The reference Express app runs with in-memory audit storage by default:
 
 ```bash
 npm run start:example
 ```
 
-The sample app uses a fixed anonymous identity by default. Its header-based demo identities can be enabled for local experimentation:
+Its sample header identities are disabled by default. For local experimentation only, enable them with `ALLOW_INSECURE_DEMO_IDENTITY=true`. **Never enable this option in a deployed environment.** The `x-user-*` and `x-tenant-*` headers are caller-controlled and are not authentication credentials. Production integrations must provide identity and tenant resolvers backed by verified credentials.
+
+## Desktop demo
+
+The desktop demo uses a loopback-only HTTP server and stores its audit snapshot locally. On Windows, the default file is `%LOCALAPPDATA%\TrustLedger\audit-events.json`; `TRUSTLEDGER_DATA_FILE` overrides the location.
+
+Build the standalone Windows executable with:
 
 ```bash
-ALLOW_INSECURE_DEMO_IDENTITY=true npm run start:example
+npm run build:exe
 ```
 
-**Never enable this demo option in a deployed environment.** The `x-user-*` and `x-tenant-*` headers are caller-controlled and are not authentication credentials. In a real service, configure `identityMiddleware` with resolvers backed by a verified session, JWT issuer, API gateway, or identity provider.
+This is a separate packaging path. The regular `npm run build` and `npm run typecheck` configurations do **not** include `desktop-app`. The packaging script also attempts to copy the executable to a fixed OneDrive Desktop path belonging to its original author. Review or edit `scripts/build-exe.js` before running it on another machine. The desktop snapshot is local storage, not an independently protected or immutable backup.
 
-## PostgreSQL
+## PostgreSQL and Docker
 
-Set `DATABASE_URL` to a PostgreSQL connection string; the reference server applies its schema migrations at startup.
+The PostgreSQL adapter uses parameterized queries and transactions, with transaction-level advisory locks to serialize writes per tenant. To build the image and start PostgreSQL plus the reference Express app:
 
 ```bash
-# Example only: use your own local credentials and database
+docker compose up --build
+```
+
+The Compose setup exposes PostgreSQL on port 5432 and the app on port 3000. It uses the example database credentials `postgres/postgres`, which are for local development only. Replace them and review network exposure before using a similar setup beyond a local machine. The named PostgreSQL volume persists data; `docker compose down` stops the services and preserves that volume.
+
+For a local app run, set `DATABASE_URL` to a PostgreSQL connection string and start the reference server. It applies the schema migrations at startup. Example PowerShell syntax:
+
+```powershell
 $env:DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/role_audit_db'
-docker compose up -d
 npm run start:example
 ```
 
-The PostgreSQL adapter uses bound parameters and transactions. Hash chaining makes unauthorized changes detectable when a trusted chain head or external checkpoint is available; a database administrator who can rewrite the entire chain can recompute hashes. Export signed checkpoints to independently controlled storage for stronger assurance. See [SECURITY.md](SECURITY.md).
+Hash chaining provides tamper evidence, not absolute immutability. A database administrator who can rewrite the full chain and its stored head can recompute hashes. For stronger assurance, export signed checkpoints to independently controlled storage and restrict database write access. See [SECURITY.md](SECURITY.md) and the [threat model](docs/threat-model.md).
 
-## Verification and security checks
+## Verification coverage and limitations
 
-```bash
-npm test                 # Unit, integration, and concurrency suites
-npm run tamper-test      # Modification, deletion, insertion, and reordering scenarios
-npm run benchmark        # Local performance measurement
-```
+GitHub Actions runs the build, unit and integration tests, tamper scenarios, and benchmarks on Node.js 20 and 22. It provisions a PostgreSQL service, but the current PostgreSQL stale-writer regression test uses a mocked client; it checks locking and stale-head rejection logic without exercising a live database. Run live PostgreSQL tests before relying on database behavior in a deployment. Docker image build and startup also require a host with Docker available.
 
-The test suite includes RBAC/ABAC decisions, tenant boundaries, masking, hash verification, concurrent writers, and Express integration. Benchmark figures vary by machine; use the included runner and [benchmark notes](docs/benchmark-report.md) to reproduce measurements in your environment.
+The desktop UI is a demonstration, not a multi-user or remote-access service. Keep it local. Anyone who can modify its local files can rewrite the file snapshot. Hash chains without an independently retained checkpoint cannot prove the original data after a complete database rewrite. The Express example's optional header identity mode is insecure and must not be deployed.
 
 ## Project layout
 
 ```text
+desktop-app/              Local audit viewer and demo server
 packages/                 Core, policy, middleware, masking, and storage workspaces
 examples/                 Express reference application
 cli/                      Verification, tamper, and benchmark commands
 migrations/               PostgreSQL schema migrations
-tests/                    Unit, integration, concurrency, and security scenarios
-docs/                     Architecture, threat model, policy, and verification guides
+tests/                    Unit, integration, and regression tests
+docs/                     Architecture, policy, threat model, and verification guides
 ```
 
 ## License
